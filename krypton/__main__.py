@@ -34,11 +34,10 @@ from .misc import (
 if HEROKU:
     from .configs import SESSION_STRING
 
-if not HEROKU:
-    app = Client('ktgvc', api_id=api_id, api_hash=api_hash)
-else:
     app = Client(SESSION_STRING, api_id=api_id, api_hash=api_hash)
 
+else:
+    app = Client('ktgvc', api_id=api_id, api_hash=api_hash)
 group_calls = GroupCall(None, path_to_log_file='')
 cmd_filter = lambda cmd: filters.command(cmd, prefixes='/')
 
@@ -167,11 +166,11 @@ async def skip(_, message):
 @app.on_message(filters.text & cmd_filter('queue'))
 async def queue_list(_, message):
     if len(queue) != 0:
-        i = 1
-        text = ""
-        for song in queue:
-            text += f"**{i}. Platform:** __**{song['service']}**__ | **Song:** __**{song['song']}**__\n"
-            i += 1
+        text = "".join(
+            f"**{i}. Platform:** __**{song['service']}**__ | **Song:** __**{song['song']}**__\n"
+            for i, song in enumerate(queue, start=1)
+        )
+
         await message.reply_text(text)
     else:
         await message.reply_text("__**Queue Is Empty, Just Like Your Life.**__")
@@ -192,7 +191,7 @@ async def play():
                 try:
                     await ytplay(requested_by, song)
                 except Exception as e:
-                    print(str(e))
+                    print(e)
                     await send(str(e))
                     playing = False
             elif service == "saavn":
@@ -201,7 +200,7 @@ async def play():
                 try:
                     await jiosaavn(requested_by, song)
                 except Exception as e:
-                    print(str(e))
+                    print(e)
                     await send(str(e))
                     playing = False
             elif service == "deezer":
@@ -210,7 +209,7 @@ async def play():
                 try:
                     await deezer(requested_by, song)
                 except Exception as e:
-                    print(str(e))
+                    print(e)
                     await send(str(e))
                     playing = False
 
@@ -230,7 +229,7 @@ async def deezer(requested_by, query):
     except Exception as e:
         await m.edit("__**Found No Song Matching Your Query.**__")
         playing = False
-        print(str(e))
+        print(e)
         return
     await m.edit("__**Generating Thumbnail.**__")
     await generate_cover_square(requested_by, title, artist, duration, thumbnail)
@@ -265,7 +264,7 @@ async def jiosaavn(requested_by, query):
         sduration_converted = convert_seconds(int(sduration))
     except Exception as e:
         await m.edit("__**Found No Song Matching Your Query.**__")
-        print(str(e))
+        print(e)
         playing = False
         return
     await m.edit("__**Processing Thumbnail.**__")
@@ -308,7 +307,7 @@ async def ytplay(requested_by, query):
     except Exception as e:
         await m.edit("__**Found No Song Matching Your Query.**__")
         playing = False
-        print(str(e))
+        print(e)
         return
     await m.edit("__**Processing Thumbnail.**__")
     await generate_cover(requested_by, title, views, duration, thumbnail)
